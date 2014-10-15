@@ -1,9 +1,10 @@
 import sys
 from random import shuffle
 
-from StrategyImporter import StrategyImporter
+from importer.StrategyImporter import StrategyImporter
 
-ROUNDS = 10000
+
+ROUNDS = 100000
 SHOE_SIZE = 8
 SHOE_PENETRATION = 0.2
 DECK_SIZE = 52.0
