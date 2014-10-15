@@ -17,6 +17,7 @@ PAIR_STRATEGY = {}
 
 class Card(object):
     """
+    Represents a playing card with name and value.
     """
     def __init__(self, name, value):
         self.name = name
@@ -28,6 +29,7 @@ class Card(object):
 
 class Shoe(object):
     """
+    Represents the shoe, which consists of a number of card decks.
     """
     reshuffle = False
 
@@ -42,6 +44,9 @@ class Shoe(object):
         return s
 
     def init_cards(self):
+        """
+        Initialize the shoe with shuffled playing cards.
+        """
         cards = []
         for d in range(self.decks):
             for c in CARDS:
@@ -62,6 +67,7 @@ class Shoe(object):
 
 class Hand(object):
     """
+    Represents a hand, either from the dealer or from the player
     """
     _value = 0
     _aces = []
@@ -81,6 +87,9 @@ class Hand(object):
 
     @property
     def value(self):
+        """
+        Returns: The current value of the hand (aces are either counted as 1 or 11).
+        """
         self._value = 0
         for c in self.cards:
             self._value += c.value
@@ -97,6 +106,9 @@ class Hand(object):
 
     @property
     def aces(self):
+        """
+        Returns: The all aces in the current hand.
+        """
         self._aces = []
         for c in self.cards:
             if c.name == "Ace":
@@ -105,6 +117,9 @@ class Hand(object):
 
     @property
     def aces_soft(self):
+        """
+        Returns: The number of aces valued as 11
+        """
         self._aces_soft = 0
         for ace in self.aces:
             if ace.value == 11:
@@ -112,12 +127,18 @@ class Hand(object):
         return self._aces_soft
 
     def soft(self):
+        """
+        Determines whether the current hand is soft (soft means that it consists of aces valued at 11).
+        """
         if self.aces_soft > 0:
             return True
         else:
             return False
 
     def splitable(self):
+        """
+        Determines if the current hand can be splitted.
+        """
         if self.length() == 2 and self.cards[0].name == self.cards[1].name:
             return True
         else:
@@ -138,15 +159,25 @@ class Hand(object):
             return False
 
     def busted(self):
+        """
+        Checks if the hand is busted.
+        """
         if self.value > 21:
             return True
         else:
             return False
 
     def add_card(self, card):
+        """
+        Add a card to the current hand.
+        """
         self.cards.append(card)
 
     def split(self):
+        """
+        Split the current hand.
+        Returns: The new hand created from the split.
+        """
         self.splithand = True
         c = self.cards.pop()
         new_hand = Hand([c])
@@ -154,11 +185,15 @@ class Hand(object):
         return new_hand
 
     def length(self):
+        """
+        Returns: The number of cards in the current hand.
+        """
         return len(self.cards)
 
 
 class Player(object):
     """
+    Represent a player
     """
     def __init__(self, hand, dealer_hand, shoe):
         self.hands = [hand]
@@ -223,6 +258,7 @@ class Player(object):
 
 class Dealer(object):
     """
+    Represent the dealer
     """
     def __init__(self, hand, shoe):
         self.hand = hand
