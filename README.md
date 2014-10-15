@@ -6,7 +6,7 @@ The result is the number of hands lost/won.
 
 For example the output 117.0 indicates, that the simulator won 117 hands more than he lost. On the other hand the output -55.0 indicates, that the simulator lost 55 hands more than he won.
 
-    python BlackJack.py Strategy.csv
+    python BlackJack.py strategy/BasicStrategy.csv
 
 ### Gaming Rules
 
