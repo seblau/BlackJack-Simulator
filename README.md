@@ -15,20 +15,20 @@ So, for example if there is a player-favorable count like +20 by 2 decks remaini
 
 ### Result
 
-The simulator provides a result per game played and an overall result summing up all the game results. The following output for example  indicates, that the in game no. 67 the simulator won 18 hands more than he lost. On the other hand the in game no. 68 the simulator lost 120 hands more than he won.
+The simulator provides a result per game played and an overall result summing up all the game results. The following output for example  indicates, that in game no. 67 the simulator won 18 hands more than he lost. On the other hand in game no. 68 the simulator lost 120 hands more than he won.
 
      ...
      WIN for Game no. 67: 18.000000
      WIN for Game no. 68: -120.000000
      ...
 
-![Gaussian Distribution](/documentation/gaussian.png?raw=true)
-
 This graph display every game with its total won or lost hands. You can see that in some rare games about 60 more hands are lost/won than won/lost. If the expectation is positive, you have developed a *Winning BlackJack Strategy*, which is the case for the provided BasicStrategy plus the OMEGA II count.
 
-![Counts Distribution](/documentation/counts.png?raw=true)
+![Gaussian Distribution](/documentation/gaussian.png?raw=true)
 
 This graph displays the development of the count for each game. You can see that the card count in rare cases even exceeds 40 and is on average as you would expect 0.
+
+![Counts Distribution](/documentation/counts.png?raw=true)
 
 ### Gaming Rules
 
