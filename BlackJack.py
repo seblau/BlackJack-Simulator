@@ -10,7 +10,7 @@ from importer.StrategyImporter import StrategyImporter
 
 
 GAMES = 100
-ROUNDS_PER_GAME = 180
+ROUNDS_PER_GAME = 20
 SHOE_SIZE = 8
 SHOE_PENETRATION = 0.05
 BET_SPREAD = 20.0
