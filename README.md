@@ -22,7 +22,7 @@ The simulator provides a result per game played and an overall result summing up
      WIN for Game no. 68: -120.000000
      ...
 
-![Gaussian Distribution](/documentation/gaussianpng?raw=true)
+![Gaussian Distribution](/documentation/gaussian.png?raw=true)
 
 This graph display every game with its total won or lost hands. You can see that in some rare games about 60 more hands are lost/won than won/lost. If the expectation is positive, you have developed a *Winning BlackJack Strategy*, which is the case for the provided BasicStrategy plus the OMEGA II count.
 
