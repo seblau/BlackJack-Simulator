@@ -3,6 +3,8 @@ BlackJack-Simulator with OMEGA II Card Counting
 
 Flexible BlackJack-Simulator written in Python. It takes a given basic strategy as input (defined in a .csv-file) and simulates that strategy over a given amount of time. The simulator also counts cards sticking to the [OMEGA II Count](http://www.countingedge.com/card-counting/advanced-omega-ii/), which basically gives every card some value. Depending on the current count the bet size gets adjusted.
 
+### Running
+
     python BlackJack.py strategy/BasicStrategy.csv
 
 Omega II Count:
@@ -13,16 +15,23 @@ Omega II Count:
 
 So, for example if there is a player-favorable count like +20 by 2 decks remaining, the simulator bets the standard bet times the specified *BET_SPREAD*.
 
+### Definition of Terms
+
+The simulator involves several concepts related to Blackjack game play.
+* A *Hand* is a single hand of Blackjack, consisting of two or more cards
+* A *Round* is single round of Blackjack, in which one or more players play their hands against the dealer's hand
+* A *Game* is a sequence of Rounds that keeps track of total money won or lost
+
 ### Result
 
-The simulator provides a result per game played and an overall result summing up all the game results. The following output for example  indicates, that in game no. 67 the simulator won 18 hands more than he lost. On the other hand in game no. 68 the simulator lost 120 hands more than he won.
+The simulator provides the net winnings result per game played and an overall result summing up all the game results. The following output for example  indicates, that in game no. 67 the simulated player won 18 hands more than he lost. On the other hand in game no. 68 the simulator lost 120 hands more than he won.
 
      ...
      WIN for Game no. 67: 18.000000
      WIN for Game no. 68: -120.000000
      ...
 
-This graph display every game with its total won or lost hands. You can see that in some rare games about 60 more hands are lost/won than won/lost. If the expectation is positive, you have developed a *Winning BlackJack Strategy*, which is the case for the provided BasicStrategy plus the OMEGA II count.
+This graph displays every game with its total won or lost hands. You can see that in some rare games about 60 more hands are lost/won than won/lost. If the expectation is positive, you have developed a *Winning BlackJack Strategy*, which is the case for the provided BasicStrategy plus the OMEGA II count.
 
 ![Gaussian Distribution](/documentation/gaussian.png?raw=true)
 
@@ -44,7 +53,7 @@ The simulator plays with the following casino rules:
 | Variable        | Description         |
 | ------------- |-------------|
 | *GAMES*  | The number of games that should be played |
-| *ROUNDS_PER_GAME*  | The number of rounds that should be played per game |
+| *ROUNDS_PER_GAME*  | The number of rounds that should be played per game (may cover multiple shoes) |
 | *SHOE_SIZE*   | The number of decks that are used |
 | *SHOE_PENETRATION*  | Indicates the percentage of cards that still remain in the shoe, when the shoe gets reshuffled |
 | *BET_SPREAD*  | The multiplier for the bet size in a player favorable counting situation |
@@ -55,11 +64,11 @@ The simulator plays with the following casino rules:
     ROUNDS = 10
     SHOE_SIZE = 8
     SHOE_PENETRATION = 0.2 # reshuffle after 80% of all cards are played
-    BET_SPREAD = 20.0 # Bet 20-times the money if the count is palyer-favorable
+    BET_SPREAD = 20.0 # Bet 20-times the money if the count is player-favorable
     
 ### Strategy
 
-Any strategy can be feeded into the simulator as a .csv file. The default strategy that comes with this simulator looks like the following:
+Any strategy can be fed into the simulator as a .csv file. The default strategy that comes with this simulator looks like the following:
 
 ![Default Strategy](/documentation/strategy.png?raw=true)
 
