@@ -315,6 +315,7 @@ class Dealer(object):
 
 class Game(object):
     """
+    A sequence of Blackjack Rounds that keeps track of total money won or lost
     """
     def __init__(self):
         self.shoe = Shoe(SHOE_SIZE)
@@ -323,7 +324,47 @@ class Game(object):
         self.player = Player()
         self.dealer = Dealer()
 
-    def start(self):
+    def get_hand_winnings(self, hand):
+        win = 0.0
+        if not hand.surrender:
+            if hand.busted():
+                status = "LOST"
+            else:
+                if hand.blackjack():
+                    if self.dealer.hand.blackjack():
+                        status = "PUSH"
+                    else:
+                        status = "WON 3:2"
+                elif self.dealer.hand.busted():
+                    status = "WON"
+                elif self.dealer.hand.value < hand.value:
+                    status = "WON"
+                elif self.dealer.hand.value > hand.value:
+                    status = "LOST"
+                elif self.dealer.hand.value == hand.value:
+                    if self.dealer.hand.blackjack():
+                        status = "LOST"  # player's 21 vs dealers blackjack
+                    else:
+                        status = "PUSH"
+        else:
+            status = "SURRENDER"
+
+        if status == "LOST":
+            win += -1
+        elif status == "WON":
+            win += 1
+        elif status == "WON 3:2":
+            win += 1.5
+        elif status == "SURRENDER":
+            win += -0.5
+        if hand.doubled:
+            win *= 2
+
+        win *= self.stake
+
+        return win
+
+    def play_round(self):
         if self.shoe.truecount() > 6:
             self.stake = BET_SPREAD
         else:
@@ -342,45 +383,8 @@ class Game(object):
         # print ""
         
         for hand in self.player.hands:
-            win = 0.0
-
-            if not hand.surrender:
-                if hand.busted():
-                    status = "LOST"
-                else:
-                    if hand.blackjack():
-                        if self.dealer.hand.blackjack():
-                            status = "PUSH"
-                        else:
-                            status = "WON 3:2"
-                    elif self.dealer.hand.busted():
-                        status = "WON"
-                    elif self.dealer.hand.value < hand.value:
-                        status = "WON"
-                    elif self.dealer.hand.value > hand.value:
-                        status = "LOST"
-                    elif self.dealer.hand.value == hand.value:
-                        if self.dealer.hand.blackjack():
-                            status = "LOST"  # player's 21 vs dealers blackjack
-                        else:
-                            status = "PUSH"
-            else:
-                status = "SURRENDER"
-
-            if status == "LOST":
-                win += -1
-            elif status == "WON":
-                win += 1
-            elif status == "WON 3:2":
-                win += 1.5
-            elif status == "SURRENDER":
-                win += -0.5
-            if hand.doubled: win *= 2
-
-            win *= self.stake
-
+            win = self.get_hand_winnings(hand)
             self.money += win
-
             # print "Player Hand: %s %s (Value: %d, Busted: %r, BlackJack: %r, Splithand: %r, Soft: %r, Surrender: %r, Doubled: %r)" % (hand, status, hand.value, hand.busted(), hand.blackjack(), hand.splithand, hand.soft(), hand.surrender, hand.doubled)
         
         # print "Dealer Hand: %s (%d)" % (self.dealer.hand, self.dealer.hand.value)
@@ -397,7 +401,7 @@ if __name__ == "__main__":
     importer = StrategyImporter(sys.argv[1])
     HARD_STRATEGY, SOFT_STRATEGY, PAIR_STRATEGY = importer.import_player_strategy()
 
-    h = []
+    moneys = []
     countings = []
 
     for g in range(GAMES):
@@ -405,22 +409,22 @@ if __name__ == "__main__":
 
         for i in range(ROUNDS_PER_GAME):
             # print '%s GAME no. %d %s' % (20 * '#', i + 1, 20 * '#')
-            game.start()
+            game.play_round()
 
-        h.append(game.get_money())
+        moneys.append(game.get_money())
         countings += game.shoe.count_history
 
         print "WIN for Game no. %d: %f" % (g + 1, game.get_money())
 
     sume = 0.0
-    for value in h:
+    for value in moneys:
         sume += value
     print "Overall: %f" % sume
 
-    h = sorted(h)
-    fit = stats.norm.pdf(h, np.mean(h), np.std(h))  #this is a fitting indeed
-    pl.plot(h,fit,'-o')
-    pl.hist(h,normed=True)      #use this to draw histogram of your data
+    moneys = sorted(moneys)
+    fit = stats.norm.pdf(moneys, np.mean(moneys), np.std(moneys))  #this is a fitting indeed
+    pl.plot(moneys,fit,'-o')
+    pl.hist(moneys,normed=True) #use this to draw histogram of your data
     pl.show()                   #use may also need add this 
 
     plt.ylabel('count')
