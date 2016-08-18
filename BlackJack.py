@@ -9,10 +9,7 @@ import matplotlib.pyplot as plt
 from importer.StrategyImporter import StrategyImporter
 
 
-GAMES = 2000
-# I'd rather consider a game is a full number of shoes played (the last hand might be shuffled in between though)
-NB_SHOES_PER_GAME = 1
-#ROUNDS_PER_GAME = 2000
+GAMES = 20000
 SHOE_SIZE = 6
 SHOE_PENETRATION = 0.25
 BET_SPREAD = 20.0
@@ -20,12 +17,14 @@ BET_SPREAD = 20.0
 DECK_SIZE = 52.0
 CARDS = {"Ace": 11, "Two": 2, "Three": 3, "Four": 4, "Five": 5, "Six": 6, "Seven": 7, "Eight": 8, "Nine": 9, "Ten": 10, "Jack": 10, "Queen": 10, "King": 10}
 BASIC_OMEGA_II = {"Ace": 0, "Two": 1, "Three": 1, "Four": 2, "Five": 2, "Six": 2, "Seven": 1, "Eight": 0, "Nine": -1, "Ten": -2, "Jack": -2, "Queen": -2, "King": -2}
-COUNT = {"Ace": SHOE_SIZE*4, "Two": SHOE_SIZE*4, "Three": SHOE_SIZE*4, "Four": SHOE_SIZE*4, "Five": SHOE_SIZE*4, "Six": SHOE_SIZE*4, "Seven": SHOE_SIZE*4, "Eight": SHOE_SIZE*4, "Nine": SHOE_SIZE*4, "Ten": SHOE_SIZE*4, "Jack": SHOE_SIZE*4, "Queen": SHOE_SIZE*4, "King": SHOE_SIZE*4}
+
+BLACKJACK_RULES = {
+    'triple7': False,  # Count 3x7 as a blackjack
+}
 
 HARD_STRATEGY = {}
 SOFT_STRATEGY = {}
 PAIR_STRATEGY = {}
-
 
 
 class Card(object):
@@ -49,9 +48,10 @@ class Shoe(object):
     def __init__(self, decks):
         self.count = 0
         self.count_history = []
+        self.ideal_count = {}
         self.decks = decks
         self.cards = self.init_cards()
-        init_count()
+        self.init_count()
 
     def __str__(self):
         s = ""
@@ -75,8 +75,12 @@ class Shoe(object):
         return cards
 
     def init_count(self):
-        for c in COUNT :
-            COUNT[c] = 4*SHOE_SIZE
+        """
+        Keep track of the number of occurrences for each card in the shoe in the course over the game. ideal_count
+        is a dictionary containing (card name - number of occurrences in shoe) pairs
+        """
+        for card in CARDS:
+            self.ideal_count[card] = 4 * SHOE_SIZE
 
     def deal(self):
         """
@@ -86,10 +90,10 @@ class Shoe(object):
         if self.shoe_penetration() < SHOE_PENETRATION:
             self.reshuffle = True
         card = self.cards.pop()
-        if (COUNT[card.name] <= 0) :
-            print("Either a cheater or a bug !")
-            sys.exit()
-        COUNT[card.name] = COUNT[card.name] - 1
+
+        assert self.ideal_count[card.name] > 0, "Either a cheater or a bug!"
+        self.ideal_count[card.name] -= 1
+
         self.do_count(card)
         return card
 
@@ -111,6 +115,7 @@ class Shoe(object):
         Returns: Ratio of cards that are still in the shoe to all initial cards.
         """
         return len(self.cards) / (DECK_SIZE * self.decks)
+
 
 class Hand(object):
     """
@@ -193,10 +198,12 @@ class Hand(object):
 
     def blackjack(self):
         """
-        Check a hand for a blackjack. Note: 3x7 is NOT counted as a blackjack.
+        Check a hand for a blackjack, taking the defined BLACKJACK_RULES into account.
         """
         if not self.splithand and self.value == 21:
-            if self.length() == 2:
+            if all(c.value == 7 for c in self.cards) and BLACKJACK_RULES['triple7']:
+                return True
+            elif self.length() == 2:
                 return True
             else:
                 return False
@@ -323,11 +330,11 @@ class Dealer(object):
         self.hand.add_card(c)
         # print "Dealer hitted: %s" %c
 
-    ''' Returns an array of 6 numbers representing the probability that the final score of the dealer is
-        [17, 18, 19, 20, 21, Busted] '''
-    #TODO Differentiate 21 and BJ
-    #TODO make an actual tree, this is false AF
-    def get_probabilities() :
+    # Returns an array of 6 numbers representing the probability that the final score of the dealer is
+    # [17, 18, 19, 20, 21, Busted] '''
+    # TODO Differentiate 21 and BJ
+    # TODO make an actual tree, this is false AF
+    def get_probabilities(self) :
         start_value = self.hand.value
         # We'll draw 5 cards no matter what an count how often we got 17, 18, 19, 20, 21, Busted
 
@@ -413,7 +420,6 @@ class Game(object):
 
         return win, bet
 
-    # Returns true if a reshuffle took place during the round
     def play_round(self):
         if self.shoe.truecount() > 6:
             self.stake = BET_SPREAD
@@ -440,14 +446,6 @@ class Game(object):
 
         # print "Dealer Hand: %s (%d)" % (self.dealer.hand, self.dealer.hand.value)
 
-        if self.shoe.reshuffle:
-            self.shoe.reshuffle = False
-            self.shoe.cards = self.shoe.init_cards()
-            self.shoe.init_count()
-            return True
-
-        return False
-
     def get_money(self):
         return self.money
 
@@ -465,11 +463,10 @@ if __name__ == "__main__":
     nb_hands = 0
     for g in range(GAMES):
         game = Game()
-        reshuffled = False
-        while(not(reshuffled)) :
+        while not game.shoe.reshuffle:
             # print '%s GAME no. %d %s' % (20 * '#', i + 1, 20 * '#')
-            reshuffled = game.play_round()
-            nb_hands = nb_hands + 1
+            game.play_round()
+            nb_hands += 1
 
         moneys.append(game.get_money())
         bets.append(game.get_bet())
@@ -484,17 +481,15 @@ if __name__ == "__main__":
     for value in bets:
         total_bet += value
 
-    print()
-
-    print(float(nb_hands)/GAMES, " hands per game, on average")
-    print("{} hands, {} total bet".format(nb_hands, "{0:.2f}".format(total_bet)))
+    print "\n%d hands overall, %0.2f hands per game on average" % (nb_hands, float(nb_hands) / GAMES)
+    print "%0.2f total bet" % total_bet
     print("Overall winnings: {} (edge = {} %)".format("{0:.2f}".format(sume), "{0:.3f}".format(100.0*sume/total_bet)))
 
     moneys = sorted(moneys)
-    fit = stats.norm.pdf(moneys, np.mean(moneys), np.std(moneys))  #this is a fitting indeed
-    pl.plot(moneys,fit,'-o')
-    pl.hist(moneys,normed=True) #use this to draw histogram of your data
-    pl.show()                   #use may also need add this
+    fit = stats.norm.pdf(moneys, np.mean(moneys), np.std(moneys))  # this is a fitting indeed
+    pl.plot(moneys, fit, '-o')
+    pl.hist(moneys, normed=True)
+    pl.show()
 
     plt.ylabel('count')
     plt.plot(countings, label='x')

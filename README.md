@@ -17,10 +17,11 @@ So, for example if there is a player-favorable count like +20 by 2 decks remaini
 
 ### Definition of Terms
 
-The simulator involves several concepts related to Blackjack game play.
+The simulator involves several concepts related to Blackjack game play:
 * A *Hand* is a single hand of Blackjack, consisting of two or more cards
 * A *Round* is single round of Blackjack, in which one or more players play their hands against the dealer's hand
-* A *Game* is a sequence of Rounds that keeps track of total money won or lost
+* A *Shoe* consists of multiple card decks consisting of SHOE_SIZE times 52 cards
+* A *Game* is a sequence of Rounds that starts with a fresh *Shoe* and ends when the *Shoe* gets reshuffled
 
 ### Result
 
