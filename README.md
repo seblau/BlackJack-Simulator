@@ -79,3 +79,12 @@ Any strategy can be fed into the simulator as a .csv file. The default strategy 
 * Sr ... Surrender
 * D ... Double Down
 * P ... Split
+
+### Note on the shuffle method used
+The shuffle method used is the default random.shuffle() which comes with a warning :
+"[if] the total number of permutations of x is larger than the period of most random number generators, [then] most permutations of a long sequence can never be generated."
+https://docs.python.org/2/library/random.html
+Hopefully :
+"Python uses the Mersenne Twister as the core generator. It produces 53-bit precision floats and has a period of 2**19937-1"
+Which means that a list of over ~~2080 elements would never see all its permutations, even if it got shuffled an infinite number of times. 8x52 = 416 is low enough to ignore this problem.
+
