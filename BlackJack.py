@@ -20,10 +20,12 @@ BET_SPREAD = 20.0
 DECK_SIZE = 52.0
 CARDS = {"Ace": 11, "Two": 2, "Three": 3, "Four": 4, "Five": 5, "Six": 6, "Seven": 7, "Eight": 8, "Nine": 9, "Ten": 10, "Jack": 10, "Queen": 10, "King": 10}
 BASIC_OMEGA_II = {"Ace": 0, "Two": 1, "Three": 1, "Four": 2, "Five": 2, "Six": 2, "Seven": 1, "Eight": 0, "Nine": -1, "Ten": -2, "Jack": -2, "Queen": -2, "King": -2}
+COUNT = {"Ace": SHOE_SIZE*4, "Two": SHOE_SIZE*4, "Three": SHOE_SIZE*4, "Four": SHOE_SIZE*4, "Five": SHOE_SIZE*4, "Six": SHOE_SIZE*4, "Seven": SHOE_SIZE*4, "Eight": SHOE_SIZE*4, "Nine": SHOE_SIZE*4, "Ten": SHOE_SIZE*4, "Jack": SHOE_SIZE*4, "Queen": SHOE_SIZE*4, "King": SHOE_SIZE*4}
 
 HARD_STRATEGY = {}
 SOFT_STRATEGY = {}
 PAIR_STRATEGY = {}
+
 
 
 class Card(object):
@@ -49,6 +51,7 @@ class Shoe(object):
         self.count_history = []
         self.decks = decks
         self.cards = self.init_cards()
+        init_count()
 
     def __str__(self):
         s = ""
@@ -71,6 +74,10 @@ class Shoe(object):
         shuffle(cards)
         return cards
 
+    def init_count(self):
+        for c in COUNT :
+            COUNT[c] = 4*SHOE_SIZE
+
     def deal(self):
         """
         Returns:    The next card off the shoe. If the shoe penetration is reached,
@@ -79,6 +86,10 @@ class Shoe(object):
         if self.shoe_penetration() < SHOE_PENETRATION:
             self.reshuffle = True
         card = self.cards.pop()
+        if (COUNT[card.name] <= 0) :
+            print("Either a cheater or a bug !")
+            sys.exit()
+        COUNT[card.name] = COUNT[card.name] - 1
         self.do_count(card)
         return card
 
@@ -312,6 +323,41 @@ class Dealer(object):
         self.hand.add_card(c)
         # print "Dealer hitted: %s" %c
 
+    ''' Returns an array of 6 numbers representing the probability that the final score of the dealer is
+        [17, 18, 19, 20, 21, Busted] '''
+    #TODO Differentiate 21 and BJ
+    #TODO make an actual tree, this is false AF
+    def get_probabilities() :
+        start_value = self.hand.value
+        # We'll draw 5 cards no matter what an count how often we got 17, 18, 19, 20, 21, Busted
+
+class Tree(object):
+    """
+    A tree that opens with a statistical card and changes as a new
+    statistical card is added. In this context, a statistical card is a list of possible values, each with a probability.
+    e.g : [2 : 0.05, 3 : 0.1, ..., 22 : 0.1]
+    Any value above 21 will be truncated to 22, which means 'Busted'.
+    """
+    #TODO to test
+    def __init__(self, start=[]):
+        self.tree = []
+        self.tree.append(start)
+
+    def add_a_statistical_card(self, stat_card):
+        # New set of leaves in the tree
+        leaves = []
+        for p in self.tree[-1] :
+            for v in stat_card :
+                new_value = v + p
+                proba = self.tree[-1][p]*stat_card[v]
+                if (new_value > 21) :
+                    # All busted values are 22
+                    new_value = 22
+                if (new_value in leaves) :
+                    leaves[new_value] = leaves[new_value] + proba
+                else :
+                    leaves[new_value] = proba
+
 
 class Game(object):
     """
@@ -397,6 +443,7 @@ class Game(object):
         if self.shoe.reshuffle:
             self.shoe.reshuffle = False
             self.shoe.cards = self.shoe.init_cards()
+            self.shoe.init_count()
             return True
 
         return False
