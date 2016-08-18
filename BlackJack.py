@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 from importer.StrategyImporter import StrategyImporter
 
 
-GAMES = 100
-ROUNDS_PER_GAME = 20
-SHOE_SIZE = 8
-SHOE_PENETRATION = 0.05
+GAMES = 2000
+# I'd rather consider a game is a full number of shoes played (the last hand might be shuffled in between though)
+NB_SHOES_PER_GAME = 1
+#ROUNDS_PER_GAME = 2000
+SHOE_SIZE = 6
+SHOE_PENETRATION = 0.25
 BET_SPREAD = 20.0
 
 DECK_SIZE = 52.0
@@ -180,12 +182,10 @@ class Hand(object):
 
     def blackjack(self):
         """
-        Check a hand for a blackjack. Note: 3x7 is also counted as a blackjack.
+        Check a hand for a blackjack. Note: 3x7 is NOT counted as a blackjack.
         """
         if not self.splithand and self.value == 21:
-            if all(c.value == 7 for c in self.cards):
-                return True
-            elif self.length() == 2:
+            if self.length() == 2:
                 return True
             else:
                 return False
@@ -275,12 +275,12 @@ class Player(object):
 
             if flag == 'H':
                 self.hit(hand, shoe)
-                
+
             if flag == 'P':
                 self.split(hand, shoe)
-                
-            if flag == 'S': 
-                break                   
+
+            if flag == 'S':
+                break
 
     def hit(self, hand, shoe):
         c = shoe.deal()
@@ -320,12 +320,14 @@ class Game(object):
     def __init__(self):
         self.shoe = Shoe(SHOE_SIZE)
         self.money = 0.0
+        self.bet = 0.0
         self.stake = 1.0
         self.player = Player()
         self.dealer = Dealer()
 
     def get_hand_winnings(self, hand):
         win = 0.0
+        bet = self.stake
         if not hand.surrender:
             if hand.busted():
                 status = "LOST"
@@ -359,11 +361,13 @@ class Game(object):
             win += -0.5
         if hand.doubled:
             win *= 2
+            bet *= 2
 
         win *= self.stake
 
-        return win
+        return win, bet
 
+    # Returns true if a reshuffle took place during the round
     def play_round(self):
         if self.shoe.truecount() > 6:
             self.stake = BET_SPREAD
@@ -381,20 +385,27 @@ class Game(object):
         self.dealer.play(self.shoe)
 
         # print ""
-        
+
         for hand in self.player.hands:
-            win = self.get_hand_winnings(hand)
+            win, bet = self.get_hand_winnings(hand)
             self.money += win
+            self.bet += bet
             # print "Player Hand: %s %s (Value: %d, Busted: %r, BlackJack: %r, Splithand: %r, Soft: %r, Surrender: %r, Doubled: %r)" % (hand, status, hand.value, hand.busted(), hand.blackjack(), hand.splithand, hand.soft(), hand.surrender, hand.doubled)
-        
+
         # print "Dealer Hand: %s (%d)" % (self.dealer.hand, self.dealer.hand.value)
 
         if self.shoe.reshuffle:
             self.shoe.reshuffle = False
             self.shoe.cards = self.shoe.init_cards()
+            return True
+
+        return False
 
     def get_money(self):
-        return self.money    
+        return self.money
+
+    def get_bet(self):
+        return self.bet
 
 
 if __name__ == "__main__":
@@ -402,30 +413,41 @@ if __name__ == "__main__":
     HARD_STRATEGY, SOFT_STRATEGY, PAIR_STRATEGY = importer.import_player_strategy()
 
     moneys = []
+    bets = []
     countings = []
-
+    nb_hands = 0
     for g in range(GAMES):
         game = Game()
-
-        for i in range(ROUNDS_PER_GAME):
+        reshuffled = False
+        while(not(reshuffled)) :
             # print '%s GAME no. %d %s' % (20 * '#', i + 1, 20 * '#')
-            game.play_round()
+            reshuffled = game.play_round()
+            nb_hands = nb_hands + 1
 
         moneys.append(game.get_money())
+        bets.append(game.get_bet())
         countings += game.shoe.count_history
 
-        print "WIN for Game no. %d: %f" % (g + 1, game.get_money())
+        print("WIN for Game no. %d: %s (%s bet)" % (g + 1, "{0:.2f}".format(game.get_money()), "{0:.2f}".format(game.get_bet())))
 
     sume = 0.0
+    total_bet = 0.0
     for value in moneys:
         sume += value
-    print "Overall: %f" % sume
+    for value in bets:
+        total_bet += value
+
+    print()
+
+    print(float(nb_hands)/GAMES, " hands per game, on average")
+    print("{} hands, {} total bet".format(nb_hands, "{0:.2f}".format(total_bet)))
+    print("Overall winnings: {} (edge = {} %)".format("{0:.2f}".format(sume), "{0:.3f}".format(100.0*sume/total_bet)))
 
     moneys = sorted(moneys)
     fit = stats.norm.pdf(moneys, np.mean(moneys), np.std(moneys))  #this is a fitting indeed
     pl.plot(moneys,fit,'-o')
     pl.hist(moneys,normed=True) #use this to draw histogram of your data
-    pl.show()                   #use may also need add this 
+    pl.show()                   #use may also need add this
 
     plt.ylabel('count')
     plt.plot(countings, label='x')
